@@ -4,7 +4,9 @@
     @change-name="onChangeName"
     @delete-node="onDel"
     @add-node="onAddNode"
+    @set-drag-start-info="setDragStartInfo"
     :model="data"
+    :dragStartInfo="dragStartInfo"
     default-tree-node-name="new node"
     default-leaf-node-name="new leaf"
     v-bind:default-expanded="false"
@@ -28,17 +30,17 @@
 import Test from "./Test.vue";
 import { ref } from "vue";
 import { Tree } from "./Tree.js";
+const dragStartInfo = ref(null);
+
+const setDragStartInfo = (val) => {
+  dragStartInfo.value = val;
+};
 const data = ref(
   new Tree([
     {
       name: "Node 1",
       id: 1,
       pid: 0,
-      dragDisabled: true,
-      addTreeNodeDisabled: true,
-      addLeafNodeDisabled: true,
-      editNodeDisabled: true,
-      delNodeDisabled: true,
       children: [
         {
           name: "Node 1-2",
@@ -52,7 +54,6 @@ const data = ref(
       name: "Node 2",
       id: 3,
       pid: 0,
-      disabled: true,
     },
     {
       name: "Node 3",
@@ -61,8 +62,12 @@ const data = ref(
     },
   ])
 );
+function onChangeName() {
+  console.log(12312312);
+}
 
 function onDel(node) {
+  console.log('[ 123123 ] >', 123123)
   node.remove();
 }
 </script>

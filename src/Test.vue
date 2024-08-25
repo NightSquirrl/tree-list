@@ -27,23 +27,45 @@
         @mouseout="mouseOut"
         @click.stop="click"
       >
-        <span class="vtl-caret vtl-is-small" v-if="model.children && model.children.length > 0">
-          <i class="vtl-icon" :class="caretClass" @click.prevent.stop="toggle"></i>
+        <span
+          class="vtl-caret vtl-is-small"
+          v-if="model.children && model.children.length > 0"
+        >
+          <i
+            class="vtl-icon"
+            :class="caretClass"
+            @click.prevent.stop="toggle"
+          ></i>
         </span>
 
         <span v-if="model.isLeaf">
-          <slot name="leafNodeIcon" :expanded="expanded" :model="model" :root="rootNode">
+          <slot
+            name="leafNodeIcon"
+            :expanded="expanded"
+            :model="model"
+            :root="rootNode"
+          >
             <i class="vtl-icon vtl-menu-icon vtl-icon-file"></i>
           </slot>
         </span>
         <span v-else>
-          <slot name="treeNodeIcon" :expanded="expanded" :model="model" :root="rootNode">
+          <slot
+            name="treeNodeIcon"
+            :expanded="expanded"
+            :model="model"
+            :root="rootNode"
+          >
             <i class="vtl-icon vtl-menu-icon vtl-icon-folder"></i>
           </slot>
         </span>
 
         <div class="vtl-node-content" v-if="!editable">
-          <slot name="leafNameDisplay" :expanded="expanded" :model="model" :root="rootNode">
+          <slot
+            name="leafNameDisplay"
+            :expanded="expanded"
+            :model="model"
+            :root="rootNode"
+          >
             {{ model.name }}
           </slot>
         </div>
@@ -63,7 +85,12 @@
             @click.stop.prevent="addChild(false)"
             v-if="!model.isLeaf && !model.addTreeNodeDisabled"
           >
-            <slot name="addTreeNodeIcon" :expanded="expanded" :model="model" :root="rootNode">
+            <slot
+              name="addTreeNodeIcon"
+              :expanded="expanded"
+              :model="model"
+              :root="rootNode"
+            >
               <i class="vtl-icon vtl-icon-folder-plus-e"></i>
             </slot>
           </span>
@@ -72,17 +99,40 @@
             @click.stop.prevent="addChild(true)"
             v-if="!model.isLeaf && !model.addLeafNodeDisabled"
           >
-            <slot name="addLeafNodeIcon" :expanded="expanded" :model="model" :root="rootNode">
+            <slot
+              name="addLeafNodeIcon"
+              :expanded="expanded"
+              :model="model"
+              :root="rootNode"
+            >
               <i class="vtl-icon vtl-icon-plus"></i>
             </slot>
           </span>
-          <span title="edit" @click.stop.prevent="setEditable" v-if="!model.editNodeDisabled">
-            <slot name="editNodeIcon" :expanded="expanded" :model="model" :root="rootNode">
+          <span
+            title="edit"
+            @click.stop.prevent="setEditable"
+            v-if="!model.editNodeDisabled"
+          >
+            <slot
+              name="editNodeIcon"
+              :expanded="expanded"
+              :model="model"
+              :root="rootNode"
+            >
               <i class="vtl-icon vtl-icon-edit"></i>
             </slot>
           </span>
-          <span title="delete" @click.stop.prevent="delNode" v-if="!model.delNodeDisabled">
-            <slot name="delNodeIcon" :expanded="expanded" :model="model" :root="rootNode">
+          <span
+            title="delete"
+            @click.stop.prevent="delNode"
+            v-if="!model.delNodeDisabled"
+          >
+            <slot
+              name="delNodeIcon"
+              :expanded="expanded"
+              :model="model"
+              :root="rootNode"
+            >
               <i class="vtl-icon vtl-icon-trash"></i>
             </slot>
           </span>
@@ -110,6 +160,7 @@
         :default-tree-node-name="defaultTreeNodeName"
         :default-leaf-node-name="defaultLeafNodeName"
         :default-expanded="defaultExpanded"
+        :dragStartInfo="dragStartInfo"
         :model="model"
         :key="model.id"
       >
@@ -140,32 +191,39 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount, nextTick,getCurrentInstance } from 'vue';
-import { TreeNode } from './Tree.js';
-import { removeHandler } from './tools.js';
+import {
+  ref,
+  computed,
+  onBeforeUnmount,
+  nextTick,
+  getCurrentInstance,
+} from "vue";
+import { TreeNode } from "./Tree.js";
+import { removeHandler } from "./tools.js";
 
 const props = defineProps({
   model: Object,
+  dragStartInfo: Object,
   defaultLeafNodeName: {
     type: String,
-    default: 'Leaf Node'
+    default: "Leaf Node",
   },
   defaultTreeNodeName: {
     type: String,
-    default: 'Tree Node'
+    default: "Tree Node",
   },
   defaultAddTreeNodeTitle: {
     type: String,
-    default: 'Add Tree Node'
+    default: "Add Tree Node",
   },
   defaultAddLeafNodeTitle: {
     type: String,
-    default: 'Add Leaf Node'
+    default: "Add Leaf Node",
   },
   defaultExpanded: {
     type: Boolean,
-    default: true
-  }
+    default: true,
+  },
 });
 
 const isHover = ref(false);
@@ -175,40 +233,41 @@ const isDragEnterBottom = ref(false);
 const isDragEnterNode = ref(false);
 const expanded = ref(props.defaultExpanded);
 const nodeInput = ref(null);
-
+let instance = getCurrentInstance();
 const rootNode = computed(() => {
-
-  let node = getCurrentInstance().parent;
-  while (node.props.model.name !== 'root') {
+  let node = instance.parent;
+  while (node.props.model.name !== "root") {
     node = node.parent;
   }
   return node;
 });
 
-const caretClass = computed(() => expanded.value ? 'vtl-icon-caret-down' : 'vtl-icon-caret-right');
-const isFolder = computed(() => props.model.children && props.model.children.length);
+const caretClass = computed(() =>
+  expanded.value ? "vtl-icon-caret-down" : "vtl-icon-caret-right"
+);
+const isFolder = computed(
+  () => props.model.children && props.model.children.length
+);
 const treeNodeClass = computed(() => ({
-  'vtl-node-main': true,
-  'vtl-active': isDragEnterNode.value,
-  'vtl-drag-disabled': props.model.dragDisabled,
-  'vtl-disabled': props.model.disabled
+  "vtl-node-main": true,
+  "vtl-active": isDragEnterNode.value,
+  "vtl-drag-disabled": props.model.dragDisabled,
+  "vtl-disabled": props.model.disabled,
 }));
 
 // Define methods
 const updateName = (e) => {
   const oldName = props.model.name;
   props.model.changeName(e.target.value);
-  console.log('update Name');
-  console.log('[ rootNode.value ] >', rootNode.value)
-  rootNode.value.emit('change-name', {
+  rootNode.value.emit("change-name", {
     id: props.model.id,
     oldName,
     newName: e.target.value,
-    node: props.model
+    node: props.model,
   });
 };
 
-const delNode = () => rootNode.value.emit('delete-node', props.model);
+const delNode = () => rootNode.value.emit("delete-node", props.model);
 
 const setEditable = () => {
   editable.value = true;
@@ -224,16 +283,16 @@ const setUnEditable = (e) => {
   editable.value = false;
   const oldName = props.model.name;
   props.model.changeName(e.target.value);
-  rootNode.value.emit('change-name', {
+  rootNode.value.emit("change-name", {
     id: props.model.id,
     oldName,
     newName: e.target.value,
-    eventType: 'blur'
+    eventType: "blur",
   });
-  rootNode.value.emit('end-edit', {
+  rootNode.value.emit("end-edit", {
     id: props.model.id,
     oldName,
-    newName: e.target.value
+    newName: e.target.value,
   });
 };
 
@@ -248,12 +307,12 @@ const mouseOver = () => {
   isHover.value = true;
 };
 
-const mouseOut = () => isHover.value = false;
+const mouseOut = () => (isHover.value = false);
 
 const click = () => {
-  rootNode.value.emit('click', {
+  rootNode.value.emit("click", {
     toggle,
-    ...props.model
+    ...props.model,
   });
 };
 
@@ -262,24 +321,20 @@ const addChild = (isLeaf) => {
   expanded.value = true;
   const node = new TreeNode({ name, isLeaf });
   props.model.addChildren(node, true);
-  rootNode.value.emit('add-node', node);
+  rootNode.value.emit("add-node", node);
 };
 
-// Drag and Drop methods
-let compInOperation = null;
-
 const dragStart = (e) => {
-  console.log('[ props.model.dragDisabled  ] >', props.model.dragDisabled,props.model )
   if (!(props.model.dragDisabled || props.model.disabled)) {
-    compInOperation = getCurrentInstance();
-    e.dataTransfer.setData('data', 'data');
-    e.dataTransfer.effectAllowed = 'move';
+    rootNode.value.emit("set-drag-start-info", instance);
+    e.dataTransfer.setData("data", "data");
+    e.dataTransfer.effectAllowed = "move";
     return true;
   }
   return false;
 };
 
-const dragEnd = () => compInOperation = null;
+const dragEnd = () => rootNode.value.emit("set-drag-start-info", null);
 
 const dragOver = (e) => {
   e.preventDefault();
@@ -287,29 +342,34 @@ const dragOver = (e) => {
 };
 
 const dragEnter = () => {
-  if (!compInOperation) return;
-  if (compInOperation.model.id === props.model.id || !compInOperation || props.model.isLeaf) return;
+  if (!props.dragStartInfo) return;
+  if (
+    props.dragStartInfo.props.model.id === props.model.id ||
+    !props.dragStartInfo ||
+    props.model.isLeaf
+  )
+    return;
   isDragEnterNode.value = true;
 };
 
-const dragLeave = () => isDragEnterNode.value = false;
+const dragLeave = () => (isDragEnterNode.value = false);
 
 const drop = () => {
-  console.log('[ compInOperation ] >', compInOperation)
-  return
-  if (!compInOperation) return;
-  const oldParent = compInOperation.model.parent;
-  compInOperation.model.moveInto(props.model);
+  if (!props.dragStartInfo) return;
+  const oldParent = props.dragStartInfo.props.model.parent;
+  props.dragStartInfo.props.model.moveInto(props.model);
   isDragEnterNode.value = false;
-  rootNode.value.emit('drop', {
+  rootNode.value.emit("drop", {
     target: props.model,
-    node: compInOperation.model,
-    src: oldParent
+    node: props.dragStartInfo.props.model,
+    src: oldParent,
   });
 };
 
 const dragEnterUp = () => {
-  if (!compInOperation) return;
+  console.log("[ props ] >", props);
+  console.log("[ props.dragStartInfo ] >", props.dragStartInfo);
+  if (!props.dragStartInfo) return;
   isDragEnterUp.value = true;
 };
 
@@ -319,25 +379,24 @@ const dragOverUp = (e) => {
 };
 
 const dragLeaveUp = () => {
-  if (!compInOperation) return;
+  if (!props.dragStartInfo) return;
   isDragEnterUp.value = false;
 };
 
 const dropBefore = () => {
-  console.log('[ compInOperation ] >', compInOperation)
-  if (!compInOperation) return;
-  const oldParent = compInOperation.model.parent;
-  compInOperation.model.insertBefore(props.model);
+  if (!props.dragStartInfo) return;
+  const oldParent = props.dragStartInfo.props.model.parent;
+  props.dragStartInfo.props.model.insertBefore(props.model);
   isDragEnterUp.value = false;
-  rootNode.value.emit('drop-before', {
+  rootNode.value.emit("drop-before", {
     target: props.model,
-    node: compInOperation.model,
-    src: oldParent
+    node: props.dragStartInfo.props.model,
+    src: oldParent,
   });
 };
 
 const dragEnterBottom = () => {
-  if (!compInOperation) return;
+  if (!props.dragStartInfo) return;
   isDragEnterBottom.value = true;
 };
 
@@ -347,43 +406,43 @@ const dragOverBottom = (e) => {
 };
 
 const dragLeaveBottom = () => {
-  if (!compInOperation) return;
+  if (!props.dragStartInfo) return;
   isDragEnterBottom.value = false;
 };
 
 const dropAfter = () => {
-  if (!compInOperation) return;
-  const oldParent = compInOperation.model.parent;
-  compInOperation.model.insertAfter(props.model);
+  if (!props.dragStartInfo) return;
+  const oldParent = props.dragStartInfo.props.model.parent;
+  props.dragStartInfo.props.model.insertAfter(props.model);
   isDragEnterBottom.value = false;
-  rootNode.value.emit('drop-after', {
+  rootNode.value.emit("drop-after", {
     target: props.model,
-    node: compInOperation.model,
-    src: oldParent
+    node: props.dragStartInfo.props.model,
+    src: oldParent,
   });
 };
 
 // Cleanup
 onBeforeUnmount(() => {
-  removeHandler(window, 'keyup');
+  removeHandler(window, "keyup");
 });
 </script>
 
-<style lang="less" >
+<style lang="less">
 @font-face {
-  font-family: 'icomoon';
-  src: url('fonts/icomoon.eot?ui1hbx');
-  src: url('fonts/icomoon.eot?ui1hbx#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?ui1hbx') format('truetype'),
-    url('fonts/icomoon.woff?ui1hbx') format('woff'),
-    url('fonts/icomoon.svg?ui1hbx#icomoon') format('svg');
+  font-family: "icomoon";
+  src: url("fonts/icomoon.eot?ui1hbx");
+  src: url("fonts/icomoon.eot?ui1hbx#iefix") format("embedded-opentype"),
+    url("fonts/icomoon.ttf?ui1hbx") format("truetype"),
+    url("fonts/icomoon.woff?ui1hbx") format("woff"),
+    url("fonts/icomoon.svg?ui1hbx#icomoon") format("svg");
   font-weight: normal;
   font-style: normal;
 }
 
 .vtl-icon {
   /* use !important to prevent issues with browser extensions that change fonts */
-  font-family: 'icomoon' !important;
+  font-family: "icomoon" !important;
   speak: none;
   font-style: normal;
   font-weight: normal;
@@ -406,28 +465,28 @@ onBeforeUnmount(() => {
 }
 
 .vtl-icon-file:before {
-  content: '\e906';
+  content: "\e906";
 }
 .vtl-icon-folder:before {
-  content: '\e907';
+  content: "\e907";
 }
 .vtl-icon-caret-down:before {
-  content: '\e901';
+  content: "\e901";
 }
 .vtl-icon-caret-right:before {
-  content: '\e900';
+  content: "\e900";
 }
 .vtl-icon-edit:before {
-  content: '\e902';
+  content: "\e902";
 }
 .vtl-icon-folder-plus-e:before {
-  content: '\e903';
+  content: "\e903";
 }
 .vtl-icon-plus:before {
-  content: '\e904';
+  content: "\e904";
 }
 .vtl-icon-trash:before {
-  content: '\e905';
+  content: "\e905";
 }
 
 .vtl-border {
